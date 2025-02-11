@@ -1,0 +1,1 @@
+Simple piece table for testing this data structure as text buffer.
