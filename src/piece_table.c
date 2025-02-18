@@ -41,6 +41,9 @@ PieceTable_t* PieceTable_create(const char *initial_text) {
 }
 
 void PieceTable_delete(PieceTable_t* deleting_piece_table){
+    if(deleting_piece_table)
+        if(deleting_piece_table->original_text)
+            free(deleting_piece_table->original_text);
     free(deleting_piece_table);
 }
 
