@@ -26,15 +26,41 @@ char PieceTable_index(PieceTable_t *piece_table,int index){
     char result_char=0;
     int index_not_found=1;
     Piece_t *pieces=NULL;
-    Piece_t *piece=NULL;
+    Piece_t *current_piece=NULL;
+    BufferType_t result_buffer_type;
     int pieces_count=0;
+    int pieces_length=0;
+    int previous_pieces_length=0;
+    int buffer_relative_index=0;
+    //int result_index=0;
 
     pieces=piece_table->pieces;
     pieces_count=piece_table->pieces_count;
 
-    // for(int i=0;i<pieces_count && index_not_found;i++){
-    //     if(pieces[i].length)
-    // }
+    for(int i=0;i<pieces_count && index_not_found;i++){
+        previous_pieces_length=pieces_length;
+
+        current_piece=&piece_table->pieces[i];
+        pieces_length+=current_piece->length_in_buffer;
+
+        result_buffer_type=current_piece->buffer_type;
+
+        if(pieces_length>index)
+            index_not_found=0;
+    }
+
+    if(!index_not_found){
+        buffer_relative_index=index-previous_pieces_length;
+
+        switch(result_buffer_type){
+            case ORIGINAL_TEXT:
+                result_char=piece_table->original_text[current_piece->start_index_in_buffer+buffer_relative_index];
+            break;
+            case ADDITIONAL_TEXT:
+                result_char=piece_table->additional_text[current_piece->start_index_in_buffer+buffer_relative_index];
+            break;
+        }
+    }
 
     return result_char;
 }
@@ -130,7 +156,7 @@ int main() {
     printf("Original text : \"%s\"\nAdditional text : \"%s\"\ntext length = %d\n",piece_table->original_text,piece_table->additional_text,piece_table_length);
 
     for(int i=0;i<piece_table_length;i++)
-        PieceTable_index(piece_table,i);
+        putchar(PieceTable_index(piece_table,i));
 
     PieceTable_delete_table(piece_table);
     
