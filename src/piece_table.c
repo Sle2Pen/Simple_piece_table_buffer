@@ -65,25 +65,77 @@ char PieceTable_index(PieceTable_t *piece_table,int index){
     return result_char;
 }
 
-// void PieceTable_insert(PieceTable_t *piece_table,int offset,char* additional_fragment){
-//     char* additional_text=NULL;
-//     Piece_t *additional_piece=NULL;
 
-//     size_t additional_fragment_size=0;
-//     int new_pieces_count=0;
 
-//     additional_fragment_size=strlen(additional_fragment);
+void PieceTable_insert(PieceTable_t *piece_table,int offset,char* additional_fragment){
+    Piece_t *pieces=NULL;
+    Piece_t *current_piece=NULL;
+    BufferType_t result_buffer_type=ADDITIONAL_TEXT;
+    
+    int pieces_count=0;
+    int pieces_length=0;
+    int previous_pieces_length=0;
+    int buffer_relative_index=0;
+    
+    int index_not_found=1;
 
-//     new_pieces_count=*piece_table->pieces_count;
-//     additional_text=piece_table->additional_text;
-//     additional_piece=&piece_table->pieces[new_pieces_count];
+    int piece_position=0;
+    int additional_text_index=0;
+    size_t additional_fragment_size=0;
 
-//     additional_piece.buffer_type=ADDITIONAL_TEXT;
+    additional_fragment_size=strlen(additional_fragment);
+    additional_text_index=(int)strlen(piece_table->additional_text);
 
-//     new_pieces_count++;
+    pieces=piece_table->pieces;
+    
+    pieces_count=piece_table->pieces_count;
 
-//     *piece_table->pieces_count=new_pieces_count;
-// }
+    for(int i=0;i<pieces_count && index_not_found;i++){
+        previous_pieces_length=pieces_length;
+
+        current_piece=&piece_table->pieces[i];
+        pieces_length+=current_piece->length_in_buffer;
+
+        //result_buffer_type=current_piece->buffer_type;
+
+        if(pieces_length>offset){
+            index_not_found=0;
+            piece_position=i;
+        }
+    }
+
+    //first:
+    strncpy(piece_table->additional_text+additional_text_index,additional_fragment,additional_fragment_size);
+
+    //second:
+    if(!index_not_found){
+        buffer_relative_index=offset-previous_pieces_length;
+        
+        printf("piece position is %d buffer relative index is %d\n\n",piece_position,buffer_relative_index);
+
+
+
+
+        if(!buffer_relative_index){
+            pieces_count++;
+
+            for(int i=pieces_count-1;i>=piece_position;i--)
+                pieces[i]=pieces[i-1];
+
+            pieces[piece_position].start_index_in_buffer=additional_text_index;
+            pieces[piece_position].length_in_buffer=additional_fragment_size;
+            pieces[piece_position].buffer_type=result_buffer_type;
+            
+
+            piece_table->pieces_count=pieces_count;
+
+            //shift additional buffer
+        }
+
+        printf("additional fragment metrics:\n\tstart index = %d\n\tsize = %ld\n",additional_text_index,additional_fragment_size);
+        printf("additional buffer : %s\npieces count = %d\n",piece_table->additional_text,piece_table->pieces_count);
+    }
+}
 
 void PieceTable_delete(){
 
@@ -118,6 +170,8 @@ void PieceTable_delete_table(PieceTable_t* deleting_piece_table){
 int main() {
     char *original_string="ipsum sit amet";
     char *additional_string="Lorem deletedtext dolor";
+    char *inserted_string="Hello, world!\n";
+    int offset=17;
     PieceTable_t *piece_table=NULL;
     Piece_t *current_piece=NULL;
     int piece_table_length=0;
@@ -150,13 +204,35 @@ int main() {
 
     piece_table->pieces_count=4;
 
+    printf("Before:\n");
+    for(int i=0; i< piece_table->pieces_count;i++)
+                printf("piece %d info:\n\tbuffer type is %s\n\tstart position is %d\n\tlength is %d\n\n",i,(piece_table->pieces[i].buffer_type==ORIGINAL_TEXT)?"original":"additional",piece_table->pieces[i].start_index_in_buffer,piece_table->pieces[i].length_in_buffer);
+
     for(int i=0; i<piece_table->pieces_count;i++)
         piece_table_length+=piece_table->pieces[i].length_in_buffer;
 
-    printf("Original text : \"%s\"\nAdditional text : \"%s\"\ntext length = %d\n",piece_table->original_text,piece_table->additional_text,piece_table_length);
+    printf("Original text\t:\t\"%s\"\nAdditional text\t:\t\"%s\"\ntext length = %d\nResult text\t:\t\"",piece_table->original_text,piece_table->additional_text,piece_table_length);
 
     for(int i=0;i<piece_table_length;i++)
         putchar(PieceTable_index(piece_table,i));
+
+    printf("\"\n\n");
+
+    PieceTable_insert(piece_table,offset,inserted_string);
+
+    piece_table_length=0;
+    for(int i=0; i<piece_table->pieces_count;i++)
+        piece_table_length+=piece_table->pieces[i].length_in_buffer;
+
+    printf("After: piece table length = %d\n",piece_table_length);
+    for(int i=0; i< piece_table->pieces_count;i++)
+    printf("piece %d info:\n\tbuffer type is %s\n\tstart position is %d\n\tlength is %d\n\n",i,(piece_table->pieces[i].buffer_type==ORIGINAL_TEXT)?"original":"additional",piece_table->pieces[i].start_index_in_buffer,piece_table->pieces[i].length_in_buffer);
+
+    printf("\n\nAfter insertion\t:\t\"");
+    for(int i=0;i<piece_table_length;i++)
+        putchar(PieceTable_index(piece_table,i));
+
+    printf("\"\n\n");
 
     PieceTable_delete_table(piece_table);
     
