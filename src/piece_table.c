@@ -98,7 +98,6 @@ void PieceTable_insert(PieceTable_t *piece_table,int offset,char* additional_fra
         current_piece=&piece_table->pieces[i];
         pieces_length+=current_piece->length_in_buffer;
 
-        //result_buffer_type=current_piece->buffer_type;
 
         if(pieces_length>offset){
             index_not_found=0;
@@ -158,13 +157,11 @@ void PieceTable_insert(PieceTable_t *piece_table,int offset,char* additional_fra
             pieces[piece_position+1].buffer_type=result_buffer_type;
 
             current_piece_length=source_piece_length-buffer_relative_index;
-            pieces[piece_position+2].start_index_in_buffer=buffer_relative_index;
+            pieces[piece_position+2].start_index_in_buffer=buffer_relative_index+current_piece->start_index_in_buffer;
             pieces[piece_position+2].length_in_buffer=current_piece_length;
+            pieces[piece_position+2].buffer_type=current_piece->buffer_type;
             
         }
-
-        // printf("additional fragment metrics:\n\tstart index = %d\n\tsize = %ld\n",additional_text_index,additional_fragment_size);
-        // printf("additional buffer : %s\npieces count = %d\n",piece_table->additional_text,piece_table->pieces_count);
     }
     else{
         //мб тут как раз проверку на значение индекса сделать
@@ -214,7 +211,9 @@ int main() {
     char *original_string="ipsum sit amet";
     char *additional_string="Lorem deletedtext dolor";
     char *inserted_in_start_string=". And Hello, from piece table!";
-    int offset=27;
+    
+    int offset=24;
+
     PieceTable_t *piece_table=NULL;
     Piece_t *current_piece=NULL;
     int piece_table_length=0;
@@ -247,6 +246,7 @@ int main() {
 
     piece_table->pieces_count=4;
 
+    //part 1
     printf("Before:\n");
     for(int i=0; i< piece_table->pieces_count;i++)
                 printf("piece %d info:\n\tbuffer type is %s\n\tstart position is %d\n\tlength is %d\n\n",i,(piece_table->pieces[i].buffer_type==ORIGINAL_TEXT)?"original":"additional",piece_table->pieces[i].start_index_in_buffer,piece_table->pieces[i].length_in_buffer);
@@ -261,7 +261,27 @@ int main() {
 
     printf("\"\n\n");
 
+    //part 2
     PieceTable_insert(piece_table,offset,inserted_in_start_string);
+
+    piece_table_length=0;
+    for(int i=0; i<piece_table->pieces_count;i++)
+        piece_table_length+=piece_table->pieces[i].length_in_buffer;
+
+    printf("After: piece table length = %d\n",piece_table_length);
+    for(int i=0; i< piece_table->pieces_count;i++)
+    printf("piece %d info:\n\tbuffer type is %s\n\tstart position is %d\n\tlength is %d\n\n",i,(piece_table->pieces[i].buffer_type==ORIGINAL_TEXT)?"original":"additional",piece_table->pieces[i].start_index_in_buffer,piece_table->pieces[i].length_in_buffer);
+
+    printf("\n\nAfter insertion\t:\t\"");
+    for(int i=0;i<piece_table_length;i++)
+        putchar(PieceTable_index(piece_table,i));
+
+    printf("\"\n\n");
+
+    //part 3
+    offset=56;
+
+    PieceTable_insert(piece_table,offset,"deletedtext");
 
     piece_table_length=0;
     for(int i=0; i<piece_table->pieces_count;i++)
