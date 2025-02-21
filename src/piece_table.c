@@ -83,6 +83,8 @@ void PieceTable_insert(PieceTable_t *piece_table,int offset,char* additional_fra
     int additional_text_index=0;
     size_t additional_fragment_size=0;
 
+    int current_piece_length=0;
+
     additional_fragment_size=strlen(additional_fragment);
     additional_text_index=(int)strlen(piece_table->additional_text);
 
@@ -108,6 +110,7 @@ void PieceTable_insert(PieceTable_t *piece_table,int offset,char* additional_fra
     strncpy(piece_table->additional_text+additional_text_index,additional_fragment,additional_fragment_size);
 
     //second:
+    //insertion in 0 position
     if(!index_not_found){
         buffer_relative_index=offset-previous_pieces_length;
         
@@ -131,9 +134,49 @@ void PieceTable_insert(PieceTable_t *piece_table,int offset,char* additional_fra
 
             //shift additional buffer
         }
+        else{
+            current_piece=&pieces[piece_position];
+            printf("\ninside piece\n");
 
-        printf("additional fragment metrics:\n\tstart index = %d\n\tsize = %ld\n",additional_text_index,additional_fragment_size);
-        printf("additional buffer : %s\npieces count = %d\n",piece_table->additional_text,piece_table->pieces_count);
+            pieces_count+=2;
+
+            for(int i=pieces_count-1;i>piece_position;i--)
+                pieces[i]=pieces[i-2];
+
+            piece_table->pieces_count=pieces_count;
+
+            int source_piece_length=current_piece->length_in_buffer;
+
+
+            current_piece_length=buffer_relative_index;
+            //current_piece->start_index_in_buffer=buffer_relative_index;
+            current_piece->length_in_buffer=current_piece_length;
+
+            current_piece_length=additional_fragment_size;
+            pieces[piece_position+1].start_index_in_buffer=additional_text_index;
+            pieces[piece_position+1].length_in_buffer=current_piece_length;
+            pieces[piece_position+1].buffer_type=result_buffer_type;
+
+            current_piece_length=source_piece_length-buffer_relative_index;
+            pieces[piece_position+2].start_index_in_buffer=buffer_relative_index;
+            pieces[piece_position+2].length_in_buffer=current_piece_length;
+            
+        }
+
+        // printf("additional fragment metrics:\n\tstart index = %d\n\tsize = %ld\n",additional_text_index,additional_fragment_size);
+        // printf("additional buffer : %s\npieces count = %d\n",piece_table->additional_text,piece_table->pieces_count);
+    }
+    else{
+        //мб тут как раз проверку на значение индекса сделать
+        //т.е. если он больше длины таблицы кусочков, то возвращать 
+        //fprintf(stderror,"%s","index out of range");
+            pieces[pieces_count].start_index_in_buffer=additional_text_index;
+            pieces[pieces_count].length_in_buffer=additional_fragment_size;
+            pieces[pieces_count].buffer_type=result_buffer_type;
+            
+            pieces_count++;
+
+            piece_table->pieces_count=pieces_count;
     }
 }
 
@@ -170,8 +213,8 @@ void PieceTable_delete_table(PieceTable_t* deleting_piece_table){
 int main() {
     char *original_string="ipsum sit amet";
     char *additional_string="Lorem deletedtext dolor";
-    char *inserted_string="Hello, world!\n";
-    int offset=17;
+    char *inserted_in_start_string=". And Hello, from piece table!";
+    int offset=27;
     PieceTable_t *piece_table=NULL;
     Piece_t *current_piece=NULL;
     int piece_table_length=0;
@@ -218,7 +261,7 @@ int main() {
 
     printf("\"\n\n");
 
-    PieceTable_insert(piece_table,offset,inserted_string);
+    PieceTable_insert(piece_table,offset,inserted_in_start_string);
 
     piece_table_length=0;
     for(int i=0; i<piece_table->pieces_count;i++)
